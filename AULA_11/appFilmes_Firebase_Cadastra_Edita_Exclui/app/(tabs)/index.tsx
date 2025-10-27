@@ -1,5 +1,5 @@
 // Importa bibliotecas do React Native e componentes personalizados
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { StyleSheet, Image, ScrollView } from "react-native";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
@@ -8,17 +8,14 @@ import { Footer } from "@/components/Footer";
 import { Link } from "expo-router";
 
 // ====================== FIREBASE ======================
-
-// Importa as funções do Firebase necessárias
-import { initializeApp } from "firebase/app";                // inicializa o app Firebase
+import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs } from "firebase/firestore"; 
-// getFirestore → conecta ao banco Firestore
-// collection → acessa uma coleção (tabela de dados)
-// getDocs → busca todos os documentos dessa coleção
 
-// === CONFIGURAÇÃO DO FIREBASE (fora do componente) ===
-// Esses dados vêm do painel do Firebase (Configurações do projeto → SDK)
-// Eles identificam qual é o SEU projeto na nuvem
+// React Navigation hook para foco da tela
+// npx expo install @react-navigation/native
+import { useFocusEffect } from "@react-navigation/native";
+
+// === CONFIGURAÇÃO DO FIREBASE ===
 const firebaseConfig = {
   apiKey: "AIzaSyB27juMVsvBBU45bvODUuFZ-zIvgwvCLFU",
   authDomain: "filmesapp-6adfd.firebaseapp.com",
@@ -29,50 +26,34 @@ const firebaseConfig = {
   measurementId: "G-8QRHJ2MCK7",
 };
 
-// Inicializa o Firebase com as informações acima
-// Isso “liga” o aplicativo ao seu projeto no console do Firebase
 const app = initializeApp(firebaseConfig);
-
-// Cria a conexão com o banco de dados Firestore
-// A constante `db` será usada para ler ou gravar dados nas coleções do Firebase
 const db = getFirestore(app);
 
 // ====================== COMPONENTE PRINCIPAL ======================
-
 export default function HomeScreen() {
-  // Estados (variáveis reativas)
   const [titulo, setTitulo] = useState("Componente Header");
   const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
-  const [filme, setFilme] = useState([]); // guardará os filmes vindos do Firebase
+  const [filme, setFilme] = useState([]); // guarda filmes do Firestore
 
-  // === BUSCAR FILMES DO FIRESTORE ===
-  // useEffect executa automaticamente quando o componente é montado
-  useEffect(() => {
-    async function carregarFilmes() {
-      try {
-        // Busca todos os documentos da coleção "filmes"
-        // (essa coleção deve existir no Firestore)
-        const querySnapshot = await getDocs(collection(db, "filmes"));
-        console.log(`${querySnapshot.size} filmes encontrados.`)
-        
-        // Transforma os documentos em um array de objetos JS
-        const lista = querySnapshot.docs.map((doc) => {
-          const dados = doc.data(); // dados do documento
-          console.log(`Filme encontrado [${doc.id}]:`, dados);
-          // Retorna um objeto contendo o ID e os dados do filme
-          return { id: doc.id, ...dados };
-        });
-
-        // Atualiza o estado do componente com a lista de filmes
-        setFilme(lista);
-      } catch (erro) {
-        console.error("Erro ao buscar filmes:", erro);
+  // === BUSCAR FILMES AO RECEBER FOCO ===
+  useFocusEffect(
+    useCallback(() => {
+      async function carregarFilmes() {
+        try {
+          const querySnapshot = await getDocs(collection(db, "filmes"));
+          const lista = querySnapshot.docs.map((doc) => {
+            const dados = doc.data();
+            return { id: doc.id, ...dados };
+          });
+          setFilme(lista); // atualiza o estado com os filmes do Firestore
+        } catch (erro) {
+          console.error("Erro ao buscar filmes:", erro);
+        }
       }
-    }
 
-    carregarFilmes(); // chama a função assim que o componente abre
-  }, []);
-  
+      carregarFilmes(); // chama a função toda vez que a tela recebe foco
+    }, []) // useCallback garante que a função não seja recriada a cada render
+  );
 
   // =========== INTERFACE VISUAL ==============
   return (
@@ -84,7 +65,6 @@ export default function HomeScreen() {
           Filmes em destaque
         </ThemedText>
 
-        {/* Percorre o array de filmes vindos do Firebase e mostra cada um na tela */}
         {filme.map((filme, index) => (
           <ThemedView key={index} style={styles.card}>
             <Image source={{ uri: filme.Capa }} style={styles.capa} />
@@ -96,7 +76,7 @@ export default function HomeScreen() {
           </ThemedView>
         ))}
 
-        {/* Link para outra página */}
+        {/* Links para navegação */}
         <Link href="/formulario" style={styles.link}>
           Adicionar filmes
         </Link>
@@ -112,14 +92,8 @@ export default function HomeScreen() {
 
 // ======== ESTILOS VISUAIS ========
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    alignItems: "center",
-    paddingVertical: 20,
-    backgroundColor: "#000",
-  },
+  container: { flex: 1 },
+  content: { alignItems: "center", paddingVertical: 20, backgroundColor: "#000" },
   card: {
     width: "95%",
     backgroundColor: "#ffffff",
@@ -133,50 +107,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
   },
-  capa: {
-    width: "100%",
-    height: 800,
-    resizeMode: "cover",
-  },
-  info: {
-    padding: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  link: {
-    marginTop: 20,
-    fontSize: 16,
-    color: "#007AFF",
-    textDecorationLine: "underline",
-  },
+  capa: { width: "100%", height: 800, resizeMode: "cover" },
+  info: { padding: 25, alignItems: "center", justifyContent: "center", gap: 10 },
+  link: { marginTop: 20, fontSize: 16, color: "#007AFF", textDecorationLine: "underline" },
 });
-
-
-const filmes = [
-  {
-    nome: "Vingadores: Ultimato",
-    duracao: "3h 02min",
-    genero: "Ação / Ficção Científica",
-    capa: "https://m.media-amazon.com/images/I/81ExhpBEbHL._AC_UF894,1000_QL80_.jpg",
-  },
-  
-  {
-    nome: "Inception",
-    duracao: "2h 28min",
-    genero: "Ficção científica",
-    capa: "https://m.media-amazon.com/images/I/71iDkRVDZNL.jpg",
-  },
-  {
-    nome: "Interestelar",
-    duracao: "2h 49min",
-    genero: "Ficção científica",
-    capa: "https://m.media-amazon.com/images/I/A1JVqNMI7UL._AC_SY741_.jpg",
-  },
-  {
-    nome: "Batman: O Cavaleiro das Trevas",
-    duracao: "2h 32min",
-    genero: "Ação",
-    capa: "https://img.elo7.com.br/product/zoom/46CCBC1/poster-filme-batman-o-cavaleiro-das-trevas-a2-60x42-cm-lo02-decoracao-quarto-nerd.jpg",
-  },
-];

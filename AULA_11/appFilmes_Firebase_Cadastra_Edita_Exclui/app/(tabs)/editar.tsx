@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { Header } from "@/components/Header";
+import { View, Text, TextInput, Button, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { initializeApp } from "firebase/app";
-import {
-  collection,
-  getFirestore,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
+import { collection, getFirestore, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { Link } from "expo-router";
+import { ThemedView } from "@/components/themed-view";
 
+// === CONFIG FIREBASE ===
+// Aqui configuramos o acesso ao banco de dados Firestore.
+// Essas chaves são criadas automaticamente pelo Firebase quando você cria um projeto.
+// Elas indicam qual aplicação está acessando o banco.
 const firebaseConfig = {
   apiKey: "AIzaSyB27juMVsvBBU45bvODUuFZ-zIvgwvCLFU",
   authDomain: "filmesapp-6adfd.firebaseapp.com",
@@ -19,57 +20,83 @@ const firebaseConfig = {
   measurementId: "G-8QRHJ2MCK7",
 };
 
+// Inicializa o app Firebase e conecta ao Firestore (banco de dados)
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getFirestore(app); // "db" é nossa conexão com o banco
 
 export default function ListaFilmes() {
-  const [filmes, setFilmes] = useState([]);
-  const [editandoId, setEditandoId] = useState(null);
-  const [dadosEditados, setDadosEditados] = useState({});
+  // Estados 
+  const [titulo, setTitulo] = useState("Componente Header");
+  const [filmes, setFilmes] = useState([]); // Guarda a lista de filmes buscada no banco
+  const [editandoId, setEditandoId] = useState(null); // Guarda o id do filme que está sendo editado
+  const [dadosEditados, setDadosEditados] = useState({}); // Guarda os dados temporários do formulário de edição
 
-  // === BUSCA OS FILMES ===
+  // === BUSCAR FILMES (TEMPO REAL) ===
+  // O useEffect é executado automaticamente quando o componente é carregado na tela.
+  // Usamos onSnapshot para receber atualizações em tempo real do Firestore.
   useEffect(() => {
-    async function buscarFilmes() {
-      const querySnapshot = await getDocs(collection(db, "filmes"));
-      const lista = querySnapshot.docs.map((docSnap) => {
+    const unsubscribe = onSnapshot(collection(db, "filmes"), (snapshot) => {
+      // "snapshot.docs" traz todos os registros
+      // Aqui usamos o map para transformar cada documento em um objeto mais simples
+      const lista = snapshot.docs.map((docSnap) => {
         const dados = docSnap.data();
+
+        // Montamos um objeto "filme" mais organizado,
+        // verificando se os campos vêm com a primeira letra maiúscula ou minúscula
         return {
-          id: docSnap.id,
-          nome: dados.nome || dados.Nome || "—",
-          genero: dados.genero || dados.Genero || "—",
-          duracao: dados.duracao || dados.Duracao || "—",
-          poster: dados.poster || dados.Capa || "",
+          id: docSnap.id, // id gerado automaticamente pelo Firestore
+          nome: dados.Nome || dados.nome || "—", // mostra o nome ou um traço se estiver vazio
+          genero: dados.Genero || dados.genero || "—",
+          duracao: dados.Duracao || dados.duracao || "—",
+          poster: dados.Capa || dados.poster || "",
         };
       });
+
+      // Atualiza o estado com a lista de filmes obtida
       setFilmes(lista);
-    }
+    });
 
-    buscarFilmes();
-  }, []);
+    // Remove listener ao desmontar o componente
+    return () => unsubscribe();
+  }, []); // o [] indica que o useEffect só roda uma vez (quando a tela carrega)
 
-  // === FUNÇÃO EXCLUIR ===
+  // === EXCLUIR FILME ===
+  // Esta função é chamada quando o usuário clica em "Excluir"
   async function excluirFilme(id) {
-    const confirmacao = window.confirm("Tem certeza que deseja excluir este filme?");
-    if (!confirmacao) return;
+    // Mostra uma caixa de confirmação na tela
+    Alert.alert("Confirmar", "Deseja excluir este filme?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive", // botão vermelho
+        onPress: async () => {
+          try {
+            // Deleta o documento do Firestore com base no ID
+            await deleteDoc(doc(db, "filmes", id));
 
-    try {
-      await deleteDoc(doc(db, "filmes", id));
-      setFilmes((prev) => prev.filter((f) => f.id !== id));
-      alert("🎬 Filme excluído com sucesso!");
-    } catch (erro) {
-      console.error("Erro ao excluir filme:", erro);
-      alert("❌ Ocorreu um erro ao excluir o filme.");
-    }
+            // A lista será atualizada automaticamente pelo onSnapshot
+            Alert.alert("Sucesso", "Filme excluído com sucesso!");
+          } catch (erro) {
+            console.error("Erro ao excluir:", erro);
+            Alert.alert("Erro", "Não foi possível excluir o filme.");
+          }
+        },
+      },
+    ]);
   }
 
-  // === FUNÇÃO EDITAR / SALVAR ===
+  // === EDITAR / SALVAR FILME ===
+  // Essa função faz duas coisas:
+  // - Se o usuário estiver editando, salva as alterações no Firestore
+  // - Caso contrário, apenas habilita a edição do filme selecionado
   async function editarOuSalvarFilme(id) {
+    // Se o ID clicado for o mesmo que está em edição, significa que o usuário quer salvar
     if (editandoId === id) {
-      // SALVAR NO FIRESTORE
       try {
+        // Cria uma referência ao documento no Firestore
         const ref = doc(db, "filmes", id);
 
-        // Envia para o Firestore respeitando os campos originais
+        // Atualiza o registro no banco com os dados digitados
         await updateDoc(ref, {
           Nome: dadosEditados.nome,
           Genero: dadosEditados.genero,
@@ -77,219 +104,185 @@ export default function ListaFilmes() {
           Capa: dadosEditados.poster,
         });
 
-        // Atualiza também no estado local
-        setFilmes((prev) =>
-          prev.map((f) => (f.id === id ? { ...f, ...dadosEditados } : f))
-        );
-
+        // Limpa o modo de edição
         setEditandoId(null);
         setDadosEditados({});
-        alert("✅ Filme atualizado com sucesso no Firestore!");
+
+        Alert.alert("Sucesso", "Filme atualizado no Firestore!");
       } catch (erro) {
         console.error("Erro ao atualizar:", erro);
-        alert("❌ Erro ao salvar alterações no Firestore.");
+        Alert.alert("Erro", "Não foi possível salvar as alterações.");
       }
     } else {
-      // ENTRAR EM MODO DE EDIÇÃO
+      // Se ainda não estiver editando, entra no modo de edição
+      // Localiza o filme que o usuário clicou em "Editar"
       const filmeSelecionado = filmes.find((f) => f.id === id);
+
+      // Marca o ID como sendo o filme em edição
       setEditandoId(id);
+
+      // Preenche os campos de texto com os dados atuais do filme
       setDadosEditados(filmeSelecionado);
     }
   }
 
-  // === CAPTURA ALTERAÇÕES NOS CAMPOS ===
+  // === FUNÇÃO PARA CONTROLAR CAMPOS DE TEXTO ===
+  // Sempre que o usuário digita algo, esta função é chamada.
+  // "campo" é o nome do dado (ex: nome, gênero, duração)
+  // "valor" é o texto digitado.
   function handleChange(campo, valor) {
+    // Atualiza o objeto "dadosEditados" sem apagar os outros campos
+    // "prev" é o estado anterior (os dados digitados antes)
+    // o operador "..." copia os valores anteriores e só troca o campo que mudou
     setDadosEditados((prev) => ({ ...prev, [campo]: valor }));
   }
 
   // === INTERFACE ===
   return (
-    <div style={styles.container}>
-      <h2 style={styles.titulo}>🎬 Lista de Filmes</h2>
+    <ThemedView style={styles.container}>
+      <Header titulo={titulo} setTitulo={setTitulo} />
+      <ScrollView >
+        <ThemedView style={styles.linkContainer}>
+          <Link href="/" >
+            <Text style={[{ color: "#007bff", marginBottom: 20 }, styles.link]}> Voltar à principal</Text>
+          </Link>
+        </ThemedView>
+        <Text style={styles.titulo}>Lista de Filmes</Text>
 
-      <div style={styles.scrollContainer}>
-        <table style={styles.tabela}>
-          <thead style={styles.thead}>
-            <tr>
-              <th style={styles.th}>Nome</th>
-              <th style={styles.th}>Gênero</th>
-              <th style={styles.th}>Duração</th>
-              <th style={styles.th}>Poster</th>
-              <th style={styles.th}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filmes.length > 0 ? (
-              filmes.map((filme) => (
-                <tr key={filme.id}>
-                  {/* Nome */}
-                  <td style={styles.td}>
-                    {editandoId === filme.id ? (
-                      <input
-                        type="text"
-                        value={dadosEditados.nome}
-                        onChange={(e) => handleChange("nome", e.target.value)}
-                        style={styles.input}
-                      />
-                    ) : (
-                      filme.nome
-                    )}
-                  </td>
+        {filmes.length > 0 ? (
+          filmes.map((filme) => (
+            <View key={filme.id} style={styles.card}>
+              {/* Se estiver no modo de edição, mostra os campos de texto */}
+              {editandoId === filme.id ? (
+                <>
+                  <TextInput
+                    style={styles.input}
+                    value={dadosEditados.nome}
+                    placeholder="Nome"
+                    onChangeText={(valor) => handleChange("nome", valor)}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    value={dadosEditados.genero}
+                    placeholder="Gênero"
+                    onChangeText={(valor) => handleChange("genero", valor)}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    value={dadosEditados.duracao}
+                    placeholder="Duração"
+                    onChangeText={(valor) => handleChange("duracao", valor)}
+                  />
+                  <TextInput
+                    style={styles.inputMenor}
+                    value={dadosEditados.poster}
+                    placeholder="Link do poster"
+                    onChangeText={(valor) => handleChange("poster", valor)}
+                  />
+                </>
+              ) : (
+                <>
+                  {/* Caso contrário, apenas mostra os textos */}
+                  <Text style={styles.texto}> Nome: {filme.nome}</Text>
+                  <Text style={styles.texto}> Gênero: {filme.genero}</Text>
+                  <Text style={styles.texto}> Duração: {filme.duracao}</Text>
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={styles.link}
+                  >
+                    {filme.poster}
+                  </Text>
+                </>
+              )}
 
-                  {/* Gênero */}
-                  <td style={styles.td}>
-                    {editandoId === filme.id ? (
-                      <input
-                        type="text"
-                        value={dadosEditados.genero}
-                        onChange={(e) => handleChange("genero", e.target.value)}
-                        style={styles.input}
-                      />
-                    ) : (
-                      filme.genero
-                    )}
-                  </td>
-
-                  {/* Duração */}
-                  <td style={styles.td}>
-                    {editandoId === filme.id ? (
-                      <input
-                        type="text"
-                        value={dadosEditados.duracao}
-                        onChange={(e) => handleChange("duracao", e.target.value)}
-                        style={styles.input}
-                      />
-                    ) : (
-                      filme.duracao
-                    )}
-                  </td>
-
-                  {/* Poster */}
-                  <td style={styles.td}>
-                    {editandoId === filme.id ? (
-                      <input
-                        type="text"
-                        value={dadosEditados.poster}
-                        onChange={(e) => handleChange("poster", e.target.value)}
-                        style={styles.input}
-                        placeholder="URI da imagem"
-                      />
-                    ) : filme.poster ? (
-                      <img
-                        src={filme.poster}
-                        alt={filme.nome}
-                        style={styles.imagem}
-                      />
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-
-                  {/* Botões */}
-                  <td style={styles.td}>
-                    <button
-                      style={styles.btnEditar}
-                      onClick={() => editarOuSalvarFilme(filme.id)}
-                    >
-                      {editandoId === filme.id ? "Salvar" : "Editar"}
-                    </button>
-                    <button
-                      style={styles.btnExcluir}
-                      onClick={() => excluirFilme(filme.id)}
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" style={styles.vazio}>
-                  Nenhum filme encontrado no Firestore.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+              {/* Botões de editar/salvar e excluir */}
+              <View style={styles.botoes}>
+                <Button
+                  title={editandoId === filme.id ? "Salvar" : "Editar"}
+                  onPress={() => editarOuSalvarFilme(filme.id)}
+                  color="#007bff"
+                />
+                <View style={{ width: 10 }} />
+                <Button
+                  title="Excluir"
+                  onPress={() => excluirFilme(filme.id)}
+                  color="#dc3545"
+                />
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.vazio}>Nenhum filme encontrado no Firestore.</Text>
+        )}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
+
 // === ESTILOS ===
-const styles = {
+const styles = StyleSheet.create({
   container: {
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
+    flex: 1,
     backgroundColor: "#1e1f22",
-    minHeight: "100vh",
+    padding: 20,
   },
   titulo: {
-    marginBottom: "20px",
+    fontSize: 24,
+    color: "#fff",
     textAlign: "center",
-    color: "#ffffff",
+    marginBottom: 20,
   },
-  scrollContainer: {
-    overflowX: "auto",
-    maxWidth: "100%",
-    backgroundColor: "#1C1C1C",
-    borderRadius: 12,
-    padding: 10,
-    scrollbarWidth: "thin",
-    scrollbarColor: "#555 #1C1C1C",
-  },
-  tabela: {
-    minWidth: 600,
-    borderCollapse: "collapse",
-    width: "100%",
-  },
-  thead: {
+  card: {
     backgroundColor: "#2b2d31",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    gap: 5
   },
-  th: {
-    backgroundColor: "#333",
-    color: "#FFF",
-    padding: 12,
-    textAlign: "left",
-    borderBottom: "2px solid #444",
+  texto: {
+    color: "#e0e0e0",
+    marginBottom: 6,
   },
-  td: {
-    padding: 10,
-    color: "#DDD",
-    borderBottom: "1px solid #333",
+  linkContainer: {
+    alignItems: 'center',
+    padding: 30,
   },
-  imagem: {
-    width: "70px",
-    borderRadius: "8px",
+  link: {    
+    color: "#fff",
+    textDecorationLine: "none",
+    marginTop: 5,
+    fontWeight: "light",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
-    width: "100%",
-    padding: "5px",
-    borderRadius: "4px",
-    border: "1px solid #666",
-    backgroundColor: "#2b2d31",
+    backgroundColor: "#3a3b3f",
     color: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    width: "100%",
   },
-  btnEditar: {
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    marginRight: "6px",
+  inputMenor: {
+    backgroundColor: "#3a3b3f",
+    color: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    width: "70%",
   },
-  btnExcluir: {
-    backgroundColor: "#dc3545",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
+  botoes: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
   },
   vazio: {
-    textAlign: "center",
     color: "#bbb",
-    padding: "20px",
+    textAlign: "center",
+    marginTop: 20,
   },
-};
+});
