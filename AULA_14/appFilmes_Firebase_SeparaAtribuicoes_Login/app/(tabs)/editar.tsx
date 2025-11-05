@@ -4,11 +4,17 @@ import { View, Text, TextInput, Button, ScrollView, StyleSheet, Alert, Touchable
 import { Link } from "expo-router";
 import { ThemedView } from "@/components/themed-view";
 
+
+// ================= AUTENTICAÇÃO =======================
+import { auth } from "@/config/firebaseConfig";
+import { router } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+// ======================================================
+
+
 // === CONFIG FIREBASE ===
 import { db } from "@/config/firebaseConfig";
 import { collection, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-// import { collection, getFirestore, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-// import { initializeApp } from "firebase/app";
 
 // // Aqui configuramos o acesso ao banco de dados Firestore.
 // // Essas chaves são criadas automaticamente pelo Firebase quando você cria um projeto.
@@ -26,10 +32,25 @@ import { collection, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/fire
 // // Inicializa o app Firebase e conecta ao Firestore (banco de dados)
 // const app = initializeApp(firebaseConfig);
 // const db = getFirestore(app); // "db" é nossa conexão com o banco
+// ================================================================
 
-export default function ListaFilmes() {
+
+// === COMPONENTE PRINCIPAL ===
+export default function ListaFilmes() {  
+  // ==== PROTEÇÃO DAS TELAS =======
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      router.replace("/login");
+    }
+  });
+  return () => unsubscribe();
+}, );
+// ======================================================
+
+
   // Estados 
-  const [titulo, setTitulo] = useState("Componente Header");
+  const [titulo, setTitulo] = useState("TopFilmes");
   const [filmes, setFilmes] = useState([]); // Guarda a lista de filmes buscada no banco
   const [editandoId, setEditandoId] = useState(null); // Guarda o id do filme que está sendo editado
   const [dadosEditados, setDadosEditados] = useState({}); // Guarda os dados temporários do formulário de edição

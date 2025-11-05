@@ -7,11 +7,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Link } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-// // React Navigation hook para foco da tela
-// // npx expo install @react-navigation/native
 
 
 // Criar o arquivo "@/config/firebaseConfig"
+
 // ====================== FIREBASE ======================
 // Importa o banco Firestore configurado
 import { db } from "@/config/firebaseConfig";
@@ -20,6 +19,8 @@ import { collection, getDocs } from "firebase/firestore";
 // import { initializeApp } from "firebase/app";
 // import { getFirestore, collection, getDocs } from "firebase/firestore"; 
 
+// // React Navigation hook para foco da tela
+// // npx expo install @react-navigation/native
 
 // // === CONFIGURAÇÃO DO FIREBASE ===
 // const firebaseConfig = {
@@ -37,7 +38,7 @@ import { collection, getDocs } from "firebase/firestore";
 
 // ====================== COMPONENTE PRINCIPAL ======================
 export default function HomeScreen() {
-  const [titulo, setTitulo] = useState("Componente Header");
+  const [titulo, setTitulo] = useState("TopFilmes");
   const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
   const [filme, setFilme] = useState([]); // guarda filmes do Firestore
 

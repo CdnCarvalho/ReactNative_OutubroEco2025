@@ -1,35 +1,18 @@
+// import { Header } from "@/components/Header";
 import React, { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
 import { View, Text, TextInput, Button, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { Link } from "expo-router";
 import { ThemedView } from "@/components/themed-view";
 
-// === CONFIG FIREBASE ===
+// ================= CONFIG FIREBASE ====================
 import { db } from "@/config/firebaseConfig";
 import { collection, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-// import { collection, getFirestore, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-// import { initializeApp } from "firebase/app";
 
-// // Aqui configuramos o acesso ao banco de dados Firestore.
-// // Essas chaves são criadas automaticamente pelo Firebase quando você cria um projeto.
-// // Elas indicam qual aplicação está acessando o banco.
-// const firebaseConfig = {
-//   apiKey: "AIzaSyB27juMVsvBBU45bvODUuFZ-zIvgwvCLFU",
-//   authDomain: "filmesapp-6adfd.firebaseapp.com",
-//   projectId: "filmesapp-6adfd",
-//   storageBucket: "filmesapp-6adfd.firebasestorage.app",
-//   messagingSenderId: "646556067415",
-//   appId: "1:646556067415:web:79d58356c302f8fe05a512",
-//   measurementId: "G-8QRHJ2MCK7",
-// };
 
-// // Inicializa o app Firebase e conecta ao Firestore (banco de dados)
-// const app = initializeApp(firebaseConfig);
-// const db = getFirestore(app); // "db" é nossa conexão com o banco
-
-export default function ListaFilmes() {
+// ================== COMPONENTE PRINCIPAL ==============
+export default function ListaFilmes() {  
   // Estados 
-  const [titulo, setTitulo] = useState("Componente Header");
+  const [titulo, setTitulo] = useState("TopFilmes");
   const [filmes, setFilmes] = useState([]); // Guarda a lista de filmes buscada no banco
   const [editandoId, setEditandoId] = useState(null); // Guarda o id do filme que está sendo editado
   const [dadosEditados, setDadosEditados] = useState({}); // Guarda os dados temporários do formulário de edição
@@ -143,7 +126,7 @@ export default function ListaFilmes() {
   // === INTERFACE ===
   return (
     <ThemedView style={styles.container}>
-      <Header titulo={titulo} setTitulo={setTitulo} />
+      {/* <Header titulo={titulo} setTitulo={setTitulo} /> */}
       <ScrollView >
         <ThemedView style={styles.linkContainer}>
           <Link href="/" >

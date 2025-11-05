@@ -1,15 +1,22 @@
 // Importa os recursos do React Native e os componentes personalizados
-import { useState } from "react";
-import { StyleSheet, TextInput, Button, View, ScrollView, Alert } from "react-native";
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
-import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { Link } from "expo-router";
+import { useState } from "react";
+import { Alert, Button, ScrollView, StyleSheet, TextInput } from "react-native";
+
+// ================= AUTENTICAÇÃO =======================
+import { auth } from "@/config/firebaseConfig";
+import { router } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
+// ======================================================
 
 // ====================== FIREBASE ======================
 import { db } from "@/config/firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 
 // // Importa as funções principais do Firebase
 // import { initializeApp } from "firebase/app";                // inicializa o app Firebase
@@ -37,14 +44,28 @@ import { collection, addDoc } from "firebase/firestore";
 
 // // Conecta ao banco de dados Firestore (nuvem do Firebase)
 // const db = getFirestore(app);
-
 // ======================================================
+
+
 
 
 // === COMPONENTE PRINCIPAL ===
 export default function FormularioScreen() {
+
+// ============= PROTEÇÃO DAS ROTAS ===================
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      router.replace("/login");
+    }
+  });
+  return () => unsubscribe();
+}, );
+// ======================================================
+
+
   // Cabeçalho e rodapé
-  const [titulo, setTitulo] = useState("Componente Header");
+  const [titulo, setTitulo] = useState("TopFilmes");
   const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
 
 
@@ -94,7 +115,7 @@ export default function FormularioScreen() {
       <Header titulo={titulo} setTitulo={setTitulo} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ThemedText type="title">Cadastro de Filme</ThemedText>
+        <ThemedText type="title">Cadastro dos Filmes</ThemedText>
 
         {/* Campos de entrada de dados */}
         <TextInput
@@ -144,6 +165,7 @@ const styles = StyleSheet.create({
   scroll: {
     alignItems: "center",
     justifyContent: "flex-start",
+    paddingTop: 60,
     padding: 20,
     gap: 20,
     paddingBottom: 80,

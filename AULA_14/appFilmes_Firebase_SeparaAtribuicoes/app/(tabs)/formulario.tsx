@@ -1,52 +1,21 @@
 // Importa os recursos do React Native e os componentes personalizados
-import { useState } from "react";
-import { StyleSheet, TextInput, Button, View, ScrollView, Alert } from "react-native";
-import { ThemedView } from "@/components/themed-view";
+// import { Header } from "@/components/Header";
 import { ThemedText } from "@/components/themed-text";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { ThemedView } from "@/components/themed-view";
 import { Link } from "expo-router";
+import { useState } from "react";
+import { Alert, Button, ScrollView, StyleSheet, TextInput } from "react-native";
 
 // ====================== FIREBASE ======================
 import { db } from "@/config/firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
-
-// // Importa as funções principais do Firebase
-// import { initializeApp } from "firebase/app";                // inicializa o app Firebase
-// import { getFirestore, collection, addDoc } from "firebase/firestore"; 
-// // getFirestore → conecta ao banco de dados Firestore
-// // collection → acessa uma coleção (semelhante a uma tabela)
-// // addDoc → adiciona (insere) um novo documento nessa coleção
-
-// // === CONFIGURAÇÃO DO FIREBASE ===
-// // Identifica o seu projeto dentro da plataforma Firebase.
-// // Dados no console do Firebase, em "Configurações do projeto".
-// const firebaseConfig = {
-//   apiKey: "AIzaSyB27juMVsvBBU45bvODUuFZ-zIvgwvCLFU",
-//   authDomain: "filmesapp-6adfd.firebaseapp.com",
-//   projectId: "filmesapp-6adfd",
-//   storageBucket: "filmesapp-6adfd.firebasestorage.app",
-//   messagingSenderId: "646556067415",
-//   appId: "1:646556067415:web:79d58356c302f8fe05a512",
-//   measurementId: "G-8QRHJ2MCK7",
-// };
-
-// // Inicializa a conexão com o Firebase
-// // Isso faz com que o app React Native “conheça” o seu projeto online
-// const app = initializeApp(firebaseConfig);
-
-// // Conecta ao banco de dados Firestore (nuvem do Firebase)
-// const db = getFirestore(app);
-
-// ======================================================
+import { addDoc, collection } from "firebase/firestore";
 
 
-// === COMPONENTE PRINCIPAL ===
+// ===================== COMPONENTE PRINCIPAL ===========
 export default function FormularioScreen() {
   // Cabeçalho e rodapé
-  const [titulo, setTitulo] = useState("Componente Header");
-  const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
-
+  const [titulo, setTitulo] = useState("TopFilmes");
+  // const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
 
   // Estados para guardar o conteúdo digitado nos campos do formulário
   const [nome, setNome] = useState("");
@@ -88,13 +57,13 @@ export default function FormularioScreen() {
     }
   };
 
-  // === INTERFACE VISUAL DO FORMULÁRIO ===
+  // ======= VISUAL DO FORMULÁRIO ===============
   return (
     <ThemedView style={styles.container}>
-      <Header titulo={titulo} setTitulo={setTitulo} />
+      {/* <Header titulo={titulo} setTitulo={setTitulo} /> */}
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ThemedText type="title">Cadastro de Filme</ThemedText>
+        <ThemedText type="title">Cadastro dos Filmes</ThemedText>
 
         {/* Campos de entrada de dados */}
         <TextInput
@@ -144,6 +113,7 @@ const styles = StyleSheet.create({
   scroll: {
     alignItems: "center",
     justifyContent: "flex-start",
+    paddingTop: 60,
     padding: 20,
     gap: 20,
     paddingBottom: 80,

@@ -1,45 +1,23 @@
 // Importa bibliotecas do React Native e componentes personalizados
+// import { Header } from "@/components/Header";
 import { useState, useCallback } from "react";
 import { StyleSheet, Image, ScrollView } from "react-native";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Link } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-// // React Navigation hook para foco da tela
-// // npx expo install @react-navigation/native
+// import { Footer } from "@/components/Footer";
 
-
-// Criar o arquivo "@/config/firebaseConfig"
 // ====================== FIREBASE ======================
 // Importa o banco Firestore configurado
 import { db } from "@/config/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 
-// import { initializeApp } from "firebase/app";
-// import { getFirestore, collection, getDocs } from "firebase/firestore"; 
-
-
-// // === CONFIGURAÇÃO DO FIREBASE ===
-// const firebaseConfig = {
-//   apiKey: "AIzaSyB27juMVsvBBU45bvODUuFZ-zIvgwvCLFU",
-//   authDomain: "filmesapp-6adfd.firebaseapp.com",
-//   projectId: "filmesapp-6adfd",
-//   storageBucket: "filmesapp-6adfd.firebasestorage.app",
-//   messagingSenderId: "646556067415",
-//   appId: "1:646556067415:web:79d58356c302f8fe05a512",
-//   measurementId: "G-8QRHJ2MCK7",
-// };
-
-// const app = initializeApp(firebaseConfig);
-// const db = getFirestore(app);
-
 // ====================== COMPONENTE PRINCIPAL ======================
 export default function HomeScreen() {
-  const [titulo, setTitulo] = useState("Componente Header");
-  const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
+  const [titulo, setTitulo] = useState("TopFilmes");
   const [filme, setFilme] = useState([]); // guarda filmes do Firestore
+  // const [rodape, setRodape] = useState("Desenvolvido por SENAC © 2025");
 
   // === BUSCAR FILMES AO RECEBER FOCO ===
   useFocusEffect(
@@ -64,7 +42,7 @@ export default function HomeScreen() {
   // =========== INTERFACE VISUAL ==============
   return (
     <ThemedView style={[styles.container, { backgroundColor: "#f0f0f0" }]}>
-      <Header titulo={titulo} setTitulo={setTitulo} />
+      {/* <Header titulo={titulo} setTitulo={setTitulo} /> */}
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="title" style={{ fontSize: 40, marginTop:60, marginBottom: 20 }}>
